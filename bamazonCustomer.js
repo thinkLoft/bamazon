@@ -56,7 +56,7 @@ function allProducts() {
         }
       ])
       .then(function(res) {
-        checkStock(res);
+        getProduct(res);
         connection.end();
       });
   });
@@ -66,6 +66,25 @@ function checkStock(x) {
   console.log(x.item_id);
   console.log(x.stock_quantity);
   if (x.stock_quantity < 1) {
-    console.log('Sorry, This is out of stock');
+    console.log('Insufficient quantity!');
   }
+}
+
+function getProduct(res) {
+  var customerChoice = res;
+  connection.query(
+    'SELECT * FROM products WHERE ?',
+    {
+      item_id: customerChoice.item_id
+    },
+    function(err, res, customerChoice) {
+      if (err) throw err;
+      if (res.length < 1) {
+        console.log('Bad Input');
+      } else {
+        console.log('good input');
+      }
+      console.log(res);
+    }
+  );
 }
