@@ -1,6 +1,7 @@
 var mysql = require('mysql');
 var inquirer = require('inquirer');
 require('dotenv').config();
+var customerChoice;
 
 var connection = mysql.createConnection({
   host: process.env.DB_HOST,
@@ -62,29 +63,28 @@ function allProducts() {
   });
 }
 
-function checkStock(x) {
-  console.log(x.item_id);
-  console.log(x.stock_quantity);
-  if (x.stock_quantity < 1) {
+function checkStock(choice, product) {
+  if (product[0].stock_quantity < choice.stock_quantity) {
     console.log('Insufficient quantity!');
+  } else {
+    console.log('enough');
   }
 }
 
 function getProduct(res) {
-  var customerChoice = res;
+  customerChoice = res;
   connection.query(
     'SELECT * FROM products WHERE ?',
     {
       item_id: customerChoice.item_id
     },
-    function(err, res, customerChoice) {
+    function(err, res) {
       if (err) throw err;
       if (res.length < 1) {
         console.log('Bad Input');
       } else {
-        console.log('good input');
+        checkStock(customerChoice, res);
       }
-      console.log(res);
     }
   );
 }
