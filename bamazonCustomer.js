@@ -86,10 +86,11 @@ function checkStock() {
 function buyStock(res) {
   if (res[0].stock_quantity < customerChoice.stock_quantity) {
     console.log('Insufficient quantity!');
+    getCurrentStock(customerChoice);
   } else {
     console.log('Approved');
     stock = res[0].stock_quantity - customerChoice.stock_quantity;
-    cost = res[0].price;
+    cost = res[0].price * customerChoice.stock_quantity;
     connection.query(
       'UPDATE products SET ? WHERE ?',
       [
@@ -102,19 +103,28 @@ function buyStock(res) {
       ],
       function(err, res) {
         if (err) throw err;
-        console.log('Stock Updated');
+        console.log(
+          'You bought: ' +
+            customerChoice.stock_quantity +
+            '\nYour Cost: $' +
+            cost
+        );
       }
     );
 
-    connection.query(
-      'SELECT * FROM products WHERE ?',
-      {
-        item_id: customerChoice.item_id
-      },
-      function(err, res) {
-        if (err) throw err;
-        console.log('Current Stock:' + res[0].stock_quantity);
-      }
-    );
+    getCurrentStock(customerChoice);
   }
+}
+
+function getCurrentStock(customerChoice) {
+  connection.query(
+    'SELECT * FROM products WHERE ?',
+    {
+      item_id: customerChoice.item_id
+    },
+    function(err, res) {
+      if (err) throw err;
+      console.log('Current Stock:' + res[0].stock_quantity);
+    }
+  );
 }
