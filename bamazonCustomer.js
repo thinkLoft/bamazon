@@ -1,9 +1,7 @@
 var mysql = require('mysql');
 var inquirer = require('inquirer');
 require('dotenv').config();
-var customerChoice;
-var inStock;
-var stock;
+var customerChoice, stock, cost;
 
 var connection = mysql.createConnection({
   host: process.env.DB_HOST,
@@ -77,49 +75,46 @@ function checkStock() {
       if (res.length < 1) {
         console.log('No ID Found');
         inStock = false;
-      } else if (res[0].stock_quantity < customerChoice.stock_quantity) {
-        console.log('Insufficient quantity!');
-        inStock = false;
       } else {
-        console.log('Approved');
-        stock = res[0].stock_quantity - customerChoice.stock_quantity;
-        inStock = true;
-      }
-      if (inStock) {
-        buyStock();
+        buyStock(res);
       }
       connection.end();
     }
   );
 }
 
-function buyStock() {
-  console.log('test 3');
-  console.log(stock);
-  connection.query(
-    'UPDATE products SET ? WHERE ?',
-    [
-      {
-        stock_quantity: stock
-      },
-      {
-        item_id: 2
+function buyStock(res) {
+  if (res[0].stock_quantity < customerChoice.stock_quantity) {
+    console.log('Insufficient quantity!');
+  } else {
+    console.log('Approved');
+    stock = res[0].stock_quantity - customerChoice.stock_quantity;
+    cost = res[0].price;
+    connection.query(
+      'UPDATE products SET ? WHERE ?',
+      [
+        {
+          stock_quantity: stock
+        },
+        {
+          item_id: customerChoice.item_id
+        }
+      ],
+      function(err, res) {
+        if (err) throw err;
+        console.log('Stock Updated');
       }
-    ],
-    function(err, res) {
-      if (err) throw err;
-      console.log('Stock Updated');
-    }
-  );
+    );
 
-  connection.query(
-    'SELECT * FROM products WHERE ?',
-    {
-      item_id: customerChoice.item_id
-    },
-    function(err, res) {
-      if (err) throw err;
-      console.log('Current Stock:' + res[0].stock_quantity);
-    }
-  );
+    connection.query(
+      'SELECT * FROM products WHERE ?',
+      {
+        item_id: customerChoice.item_id
+      },
+      function(err, res) {
+        if (err) throw err;
+        console.log('Current Stock:' + res[0].stock_quantity);
+      }
+    );
+  }
 }
