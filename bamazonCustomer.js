@@ -2,6 +2,8 @@ var mysql = require('mysql');
 var inquirer = require('inquirer');
 require('dotenv').config();
 var customerChoice;
+var inStock;
+var stock;
 
 var connection = mysql.createConnection({
   host: process.env.DB_HOST,
@@ -30,19 +32,20 @@ function allProducts() {
     console.log(
       "BAMAZON STOREFRONT \n============================\n============================'"
     );
-    for (i = 0; i < res.length; i++) {
-      console.log(
-        'Item ID: ' +
-          res[i].item_id +
-          '\nName: ' +
-          res[i].product_name +
-          '\nCost: $' +
-          res[i].price +
-          '\nStock: ' +
-          res[i].stock_quantity +
-          '\n============================'
-      );
-    }
+    // for (i = 0; i < res.length; i++) {
+    //   console.log(
+    //     'Item ID: ' +
+    //       res[i].item_id +
+    //       '\nName: ' +
+    //       res[i].product_name +
+    //       '\nCost: $' +
+    //       res[i].price +
+    //       '\nStock: ' +
+    //       res[i].stock_quantity +
+    //       '\n============================'
+    //   );
+    // }
+
     inquirer
       .prompt([
         {
@@ -57,22 +60,13 @@ function allProducts() {
         }
       ])
       .then(function(res) {
-        getProduct(res);
-        connection.end();
+        customerChoice = res;
+        checkStock();
       });
   });
 }
 
-function checkStock(choice, product) {
-  if (product[0].stock_quantity < choice.stock_quantity) {
-    console.log('Insufficient quantity!');
-  } else {
-    console.log('enough');
-  }
-}
-
-function getProduct(res) {
-  customerChoice = res;
+function checkStock() {
   connection.query(
     'SELECT * FROM products WHERE ?',
     {
@@ -81,10 +75,51 @@ function getProduct(res) {
     function(err, res) {
       if (err) throw err;
       if (res.length < 1) {
-        console.log('Bad Input');
+        console.log('No ID Found');
+        inStock = false;
+      } else if (res[0].stock_quantity < customerChoice.stock_quantity) {
+        console.log('Insufficient quantity!');
+        inStock = false;
       } else {
-        checkStock(customerChoice, res);
+        console.log('Approved');
+        stock = res[0].stock_quantity - customerChoice.stock_quantity;
+        inStock = true;
       }
+      if (inStock) {
+        buyStock();
+      }
+      connection.end();
+    }
+  );
+}
+
+function buyStock() {
+  console.log('test 3');
+  console.log(stock);
+  connection.query(
+    'UPDATE products SET ? WHERE ?',
+    [
+      {
+        stock_quantity: stock
+      },
+      {
+        item_id: 2
+      }
+    ],
+    function(err, res) {
+      if (err) throw err;
+      console.log('Stock Updated');
+    }
+  );
+
+  connection.query(
+    'SELECT * FROM products WHERE ?',
+    {
+      item_id: customerChoice.item_id
+    },
+    function(err, res) {
+      if (err) throw err;
+      console.log('Current Stock:' + res[0].stock_quantity);
     }
   );
 }
